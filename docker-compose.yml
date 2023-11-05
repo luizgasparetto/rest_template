@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: always
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    volumes:
+      - articles_postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+
+  app:
+    build: .
+    container_name: app
+    restart: always
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    env_file:
+      - .env
+    networks:
+      - articles-proxy
+    depends_on:
+      - postgres
+      - nginx
+
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    ports:
+      - ${NGINX_PORT}:${NGINX_PORT}
+    networks:
+      - articles-proxy
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+volumes:
+  articles_postgres:
+    driver: local
+
+networks:
+  articles-proxy:
+    driver: bridge
